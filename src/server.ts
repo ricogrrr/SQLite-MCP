@@ -16,11 +16,13 @@ server.tool(
   "Open a SQLite database file",
   {
     path: z.string(),
+    busyTimeout: z.number().optional().default(5000),
   },
-  async ({ path }) => {
+  async ({ path, busyTimeout }) => {
     db = new Database(path);
+    db.exec(`PRAGMA busy_timeout = ${busyTimeout}`);
     return {
-      content: [{ type: "text", text: `Opened database: ${path}` }],
+      content: [{ type: "text", text: `Opened database: ${path} (busy timeout: ${busyTimeout}ms)` }],
     };
   }
 );
@@ -92,15 +94,16 @@ server.tool(
   }
 );
 
-// 4. Run SELECT queries (safe version with row limit)
+// 4. Run SELECT queries (safe version with row limit and timeout)
 server.tool(
   "run_query",
-  "Run a SELECT query on the opened database (max 1000 rows by default)",
+  "Run a SELECT query on the opened database (max 1000 rows by default, 30s timeout)",
   {
     sql: z.string(),
     limit: z.number().optional().default(1000),
+    timeout: z.number().optional().default(30000),
   },
-  async ({ sql, limit }) => {
+  async ({ sql, limit, timeout }) => {
     if (!db) throw new Error("Database not opened");
 
     // VERY basic safety check
@@ -110,14 +113,32 @@ server.tool(
 
     // Enforce max limit of 10000 rows to prevent memory issues
     const effectiveLimit = Math.min(limit, 10000);
+    const effectiveTimeout = Math.min(timeout, 60000); // Max 60s
     
-    const result = db.prepare(sql).limit(effectiveLimit).all();
+    // Execute query with timeout protection using race
+    const queryPromise = new Promise((resolve, reject) => {
+      try {
+        const stmt = db!.prepare(sql);
+        stmt.raw(true);
+        const rows = stmt.limit(effectiveLimit).all();
+        resolve(rows);
+      } catch (err) {
+        reject(err);
+      }
+    });
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Query timeout after ${effectiveTimeout}ms`)), effectiveTimeout);
+    });
+    
+    const result = await Promise.race([queryPromise, timeoutPromise]);
     
     const response = {
       rows: result,
-      count: result.length,
+      count: Array.isArray(result) ? result.length : 0,
       limit: effectiveLimit,
-      hasMore: result.length === effectiveLimit,
+      hasMore: Array.isArray(result) && result.length === effectiveLimit,
+      executionTime: effectiveTimeout,
     };
 
     return {
