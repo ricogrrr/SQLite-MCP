@@ -149,5 +149,30 @@ server.tool(
   }
 );
 
+// 5. Transaction support
+server.tool("begin_transaction", "Begin a database transaction", async () => {
+  if (!db) throw new Error("Database not opened");
+  db.exec("BEGIN TRANSACTION");
+  return {
+    content: [{ type: "text", text: "Transaction started" }],
+  };
+});
+
+server.tool("commit_transaction", "Commit the current transaction", async () => {
+  if (!db) throw new Error("Database not opened");
+  db.exec("COMMIT");
+  return {
+    content: [{ type: "text", text: "Transaction committed" }],
+  };
+});
+
+server.tool("rollback_transaction", "Rollback the current transaction", async () => {
+  if (!db) throw new Error("Database not opened");
+  db.exec("ROLLBACK");
+  return {
+    content: [{ type: "text", text: "Transaction rolled back" }],
+  };
+});
+
 const transport = new StdioServerTransport();
 await server.connect(transport);

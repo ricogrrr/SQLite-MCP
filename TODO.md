@@ -9,7 +9,7 @@
 
 ## 🛡️ Safety & UX
 
-- [ ] **Query timeout** — Kill long-running queries
+- [x] **Query timeout** — Kill long-running queries
 - [x] **Row limit** — Cap run_query results (e.g., 1000 rows max)
 - [ ] **Transaction support** — Begin/commit/rollback for write operations
 - [ ] **Better validation** — Whitelist tables, block dangerous keywords
@@ -32,7 +32,7 @@
 1. [x] describe_table — Essential for any real work
 2. [x] Row limits — Prevent accidental SELECT * on massive tables
 3. [x] Tests — Catch MCP protocol changes early
-4. [ ] Query timeout — Kill long-running queries
+4. [x] Query timeout — Kill long-running queries
 5. [ ] Transaction support — Begin/commit/rollback for write operations
 6. [ ] Better validation — Whitelist tables, block dangerous keywords
 7. [ ] execute_write — Safe INSERT/UPDATE/DELETE with confirmation
