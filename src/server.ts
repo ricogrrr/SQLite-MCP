@@ -224,5 +224,91 @@ server.tool("rollback_transaction", "Rollback the current transaction", async ()
   };
 });
 
+// 6. Execute write operations (INSERT/UPDATE/DELETE) with safety checks
+server.tool(
+  "execute_write",
+  "Execute INSERT, UPDATE, or DELETE query with safety confirmation",
+  {
+    sql: z.string(),
+    confirm: z.boolean().default(false),
+  },
+  async ({ sql, confirm }) => {
+    if (!db) throw new Error("Database not opened");
+
+    const normalizedSql = sql.trim().toLowerCase();
+    
+    // Determine operation type
+    let operation: string;
+    if (normalizedSql.startsWith('insert')) {
+      operation = 'INSERT';
+    } else if (normalizedSql.startsWith('update')) {
+      operation = 'UPDATE';
+    } else if (normalizedSql.startsWith('delete')) {
+      operation = 'DELETE';
+    } else {
+      throw new Error("Only INSERT, UPDATE, or DELETE queries allowed in this tool");
+    }
+
+    // Block dangerous patterns
+    if (normalizedSql.includes('drop table') || 
+        normalizedSql.includes('drop database') ||
+        normalizedSql.includes('truncate')) {
+      throw new Error("Dangerous operations not allowed");
+    }
+
+    // Require confirmation for DELETE without WHERE or UPDATE without WHERE
+    const hasWhere = normalizedSql.includes('where');
+    if (!confirm && ((operation === 'DELETE' && !hasWhere) || (operation === 'UPDATE' && !hasWhere))) {
+      throw new Error(
+        `⚠️ WARNING: ${operation} without WHERE clause will affect ALL rows. ` +
+        `Set confirm=true to proceed anyway, or add a WHERE clause.`
+      );
+    }
+
+    // Show preview if not confirmed
+    if (!confirm) {
+      // Get affected rows count preview
+      let previewQuery: string;
+      if (operation === 'DELETE') {
+        previewQuery = sql.replace(/delete/i, 'SELECT *');
+      } else if (operation === 'UPDATE') {
+        previewQuery = sql.replace(/update\s+(\w+)\s+set/i, 'SELECT * FROM $1 WHERE');
+        previewQuery = previewQuery.replace(/=\s*[^,]+/g, 'IS NOT NULL');
+      } else {
+        previewQuery = '';
+      }
+
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `Preview for: ${sql}\n\n` +
+                  `Operation: ${operation}\n` +
+                  `⚠️ This will modify data in the database.\n\n` +
+                  `Set confirm=true to execute this query.`
+          },
+        ],
+      };
+    }
+
+    // Execute the write operation
+    const result = db.prepare(sql).run();
+    
+    return {
+      content: [
+        { 
+          type: "text", 
+          text: JSON.stringify({
+            operation,
+            changes: result.changes,
+            lastInsertRowid: result.lastInsertRowid,
+            message: `${operation} completed successfully`,
+          }, null, 2) 
+        },
+      ],
+    };
+  }
+);
+
 const transport = new StdioServerTransport();
 await server.connect(transport);
