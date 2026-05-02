@@ -92,14 +92,15 @@ server.tool(
   }
 );
 
-// 4. Run SELECT queries (safe version)
+// 4. Run SELECT queries (safe version with row limit)
 server.tool(
   "run_query",
-  "Run a SELECT query on the opened database",
+  "Run a SELECT query on the opened database (max 1000 rows by default)",
   {
     sql: z.string(),
+    limit: z.number().optional().default(1000),
   },
-  async ({ sql }) => {
+  async ({ sql, limit }) => {
     if (!db) throw new Error("Database not opened");
 
     // VERY basic safety check
@@ -107,11 +108,21 @@ server.tool(
       throw new Error("Only SELECT queries allowed in this tool");
     }
 
-    const result = db.prepare(sql).all();
+    // Enforce max limit of 10000 rows to prevent memory issues
+    const effectiveLimit = Math.min(limit, 10000);
+    
+    const result = db.prepare(sql).limit(effectiveLimit).all();
+    
+    const response = {
+      rows: result,
+      count: result.length,
+      limit: effectiveLimit,
+      hasMore: result.length === effectiveLimit,
+    };
 
     return {
       content: [
-        { type: "text", text: JSON.stringify(result, null, 2) },
+        { type: "text", text: JSON.stringify(response, null, 2) },
       ],
     };
   }
