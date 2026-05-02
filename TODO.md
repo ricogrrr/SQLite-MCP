@@ -4,7 +4,7 @@
 
 - [x] **describe_table** — Show column names, types, constraints
 - [x] **execute_write** — Safe INSERT/UPDATE/DELETE with confirmation
-- [ ] **get_schema** — Full DDL export of the database
+- [x] **get_schema** — Full DDL export of the database
 - [ ] **export_csv** — Query results → CSV file
 
 ## 🛡️ Safety & UX
@@ -36,7 +36,7 @@
 5. [x] Transaction support — Begin/commit/rollback for write operations
 6. [x] Better validation — Whitelist tables, block dangerous keywords
 7. [x] execute_write — Safe INSERT/UPDATE/DELETE with confirmation
-8. [ ] get_schema — Full DDL export of the database
+8. [x] get_schema — Full DDL export of the database
 9. [ ] export_csv — Query results → CSV file
 10. [ ] Connection pooling — Handle multiple databases simultaneously
 11. [ ] Query history — Cache recent results for faster follow-ups

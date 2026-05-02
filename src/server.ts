@@ -382,5 +382,72 @@ server.tool("get_schema", "Export complete database schema as SQL DDL", async ()
   };
 });
 
+// 8. Export query results to CSV
+server.tool(
+  "export_csv",
+  "Export query results to CSV format",
+  {
+    sql: z.string(),
+    filename: z.string().optional(),
+  },
+  async ({ sql, filename }) => {
+    if (!db) throw new Error("Database not opened");
+
+    // Validate query (must be SELECT)
+    const normalizedSql = sql.trim().toLowerCase();
+    if (!normalizedSql.startsWith('select')) {
+      throw new Error("Only SELECT queries can be exported to CSV");
+    }
+
+    // Execute query
+    const result = db.prepare(sql).all();
+    
+    if (result.length === 0) {
+      return {
+        content: [{ type: "text", text: "No data to export" }],
+      };
+    }
+
+    // Convert to CSV
+    const headers = Object.keys(result[0]);
+    const csvRows: string[] = [];
+    
+    // Header row
+    csvRows.push(headers.join(','));
+    
+    // Data rows
+    for (const row of result) {
+      const values = headers.map(h => {
+        const val = (row as any)[h];
+        if (val === null || val === undefined) return '';
+        // Escape values containing commas or quotes
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      });
+      csvRows.push(values.join(','));
+    }
+    
+    const csv = csvRows.join('\n');
+    const outputFilename = filename || `export_${Date.now()}.csv`;
+
+    return {
+      content: [
+        { 
+          type: "text", 
+          text: JSON.stringify({
+            filename: outputFilename,
+            rowCount: result.length,
+            csv: csv,
+            preview: csv.substring(0, 500) + (csv.length > 500 ? '...' : ''),
+          }, null, 2) 
+        },
+      ],
+    };
+  }
+);
+
 const transport = new StdioServerTransport();
 await server.connect(transport);
