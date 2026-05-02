@@ -310,5 +310,77 @@ server.tool(
   }
 );
 
+// 7. Get full database schema (DDL export)
+server.tool("get_schema", "Export complete database schema as SQL DDL", async () => {
+  if (!db) throw new Error("Database not opened");
+
+  // Get all tables
+  const tables = db.prepare("SELECT name, sql FROM sqlite_master WHERE type='table' AND sql IS NOT NULL").all();
+  
+  // Get all indexes
+  const indexes = db.prepare("SELECT name, sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL").all();
+  
+  // Get all views
+  const views = db.prepare("SELECT name, sql FROM sqlite_master WHERE type='view' AND sql IS NOT NULL").all();
+  
+  // Get all triggers
+  const triggers = db.prepare("SELECT name, sql FROM sqlite_master WHERE type='trigger' AND sql IS NOT NULL").all();
+
+  // Build complete schema SQL
+  let schema = "-- Database Schema Export\n";
+  schema += `-- Generated: ${new Date().toISOString()}\n\n`;
+  
+  // Tables
+  schema += "-- Tables\n";
+  tables.forEach((t: any) => {
+    schema += `${t.sql};\n\n`;
+  });
+  
+  // Indexes
+  if (indexes.length > 0) {
+    schema += "-- Indexes\n";
+    indexes.forEach((i: any) => {
+      schema += `${i.sql};\n\n`;
+    });
+  }
+  
+  // Views
+  if (views.length > 0) {
+    schema += "-- Views\n";
+    views.forEach((v: any) => {
+      schema += `${v.sql};\n\n`;
+    });
+  }
+  
+  // Triggers
+  if (triggers.length > 0) {
+    schema += "-- Triggers\n";
+    triggers.forEach((t: any) => {
+      schema += `${t.sql};\n\n`;
+    });
+  }
+
+  return {
+    content: [
+      { 
+        type: "text", 
+        text: JSON.stringify({
+          tables: tables.map((t: any) => t.name),
+          indexes: indexes.map((i: any) => i.name),
+          views: views.map((v: any) => v.name),
+          triggers: triggers.map((t: any) => t.name),
+          ddl: schema,
+          summary: {
+            tableCount: tables.length,
+            indexCount: indexes.length,
+            viewCount: views.length,
+            triggerCount: triggers.length,
+          }
+        }, null, 2) 
+      },
+    ],
+  };
+});
+
 const transport = new StdioServerTransport();
 await server.connect(transport);

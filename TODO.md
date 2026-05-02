@@ -3,7 +3,7 @@
 ## 🔧 New Tools
 
 - [x] **describe_table** — Show column names, types, constraints
-- [ ] **execute_write** — Safe INSERT/UPDATE/DELETE with confirmation
+- [x] **execute_write** — Safe INSERT/UPDATE/DELETE with confirmation
 - [ ] **get_schema** — Full DDL export of the database
 - [ ] **export_csv** — Query results → CSV file
 
@@ -35,7 +35,7 @@
 4. [x] Query timeout — Kill long-running queries
 5. [x] Transaction support — Begin/commit/rollback for write operations
 6. [x] Better validation — Whitelist tables, block dangerous keywords
-7. [ ] execute_write — Safe INSERT/UPDATE/DELETE with confirmation
+7. [x] execute_write — Safe INSERT/UPDATE/DELETE with confirmation
 8. [ ] get_schema — Full DDL export of the database
 9. [ ] export_csv — Query results → CSV file
 10. [ ] Connection pooling — Handle multiple databases simultaneously
