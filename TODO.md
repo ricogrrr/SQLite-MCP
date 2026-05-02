@@ -2,7 +2,7 @@
 
 ## 🔧 New Tools
 
-- [ ] **describe_table** — Show column names, types, constraints
+- [x] **describe_table** — Show column names, types, constraints
 - [ ] **execute_write** — Safe INSERT/UPDATE/DELETE with confirmation
 - [ ] **get_schema** — Full DDL export of the database
 - [ ] **export_csv** — Query results → CSV file
@@ -10,7 +10,7 @@
 ## 🛡️ Safety & UX
 
 - [ ] **Query timeout** — Kill long-running queries
-- [ ] **Row limit** — Cap run_query results (e.g., 1000 rows max)
+- [x] **Row limit** — Cap run_query results (e.g., 1000 rows max)
 - [ ] **Transaction support** — Begin/commit/rollback for write operations
 - [ ] **Better validation** — Whitelist tables, block dangerous keywords
 
@@ -22,16 +22,16 @@
 
 ## 🧪 Dev/Deploy
 
-- [ ] **Tests** — Jest tests for each tool
+- [x] **Tests** — Jest tests for each tool
 - [ ] **Docker** — One-liner container deployment
 - [ ] **GitHub Actions** — Auto-publish to npm
 - [ ] **CLI mode** — Direct command-line usage without MCP
 
 ## 🎯 Priority Order (Top to Bottom)
 
-1. [ ] describe_table — Essential for any real work
-2. [ ] Row limits — Prevent accidental SELECT * on massive tables
-3. [ ] Tests — Catch MCP protocol changes early
+1. [x] describe_table — Essential for any real work
+2. [x] Row limits — Prevent accidental SELECT * on massive tables
+3. [x] Tests — Catch MCP protocol changes early
 4. [ ] Query timeout — Kill long-running queries
 5. [ ] Transaction support — Begin/commit/rollback for write operations
 6. [ ] Better validation — Whitelist tables, block dangerous keywords
