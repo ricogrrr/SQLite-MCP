@@ -94,7 +94,58 @@ server.tool(
   }
 );
 
-// 4. Run SELECT queries (safe version with row limit and timeout)
+// Dangerous SQL keywords to block
+const DANGEROUS_KEYWORDS = [
+  'drop', 'delete', 'insert', 'update', 'alter', 'create', 'truncate',
+  'replace', 'attach', 'detach', 'pragma', 'vacuum', 'reindex'
+];
+
+// Enhanced SQL validation function
+function validateQuery(sql: string, allowedTables?: string[]): void {
+  const normalizedSql = sql.toLowerCase().trim();
+  
+  // Check for dangerous keywords
+  for (const keyword of DANGEROUS_KEYWORDS) {
+    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    if (regex.test(normalizedSql)) {
+      throw new Error(`Query blocked: contains dangerous keyword '${keyword}'`);
+    }
+  }
+  
+  // Must start with SELECT
+  if (!normalizedSql.startsWith('select')) {
+    throw new Error("Only SELECT queries allowed");
+  }
+  
+  // Check for multiple statements (semicolon detection)
+  if (normalizedSql.includes(';')) {
+    throw new Error("Multiple SQL statements not allowed");
+  }
+  
+  // Optional: Validate table whitelist
+  if (allowedTables && allowedTables.length > 0) {
+    const fromMatch = normalizedSql.match(/\bfrom\s+(\w+)/i);
+    const joinMatch = normalizedSql.match(/\bjoin\s+(\w+)/gi);
+    
+    const tablesUsed: string[] = [];
+    if (fromMatch) tablesUsed.push(fromMatch[1].toLowerCase());
+    if (joinMatch) {
+      joinMatch.forEach(match => {
+        const table = match.replace(/join\s+/i, '').toLowerCase();
+        tablesUsed.push(table);
+      });
+    }
+    
+    const normalizedAllowed = allowedTables.map(t => t.toLowerCase());
+    for (const table of tablesUsed) {
+      if (!normalizedAllowed.includes(table)) {
+        throw new Error(`Table '${table}' not in whitelist. Allowed tables: ${allowedTables.join(', ')}`);
+      }
+    }
+  }
+}
+
+// 4. Run SELECT queries (safe version with row limit, timeout, and validation)
 server.tool(
   "run_query",
   "Run a SELECT query on the opened database (max 1000 rows by default, 30s timeout)",
@@ -102,14 +153,13 @@ server.tool(
     sql: z.string(),
     limit: z.number().optional().default(1000),
     timeout: z.number().optional().default(30000),
+    allowedTables: z.array(z.string()).optional(),
   },
-  async ({ sql, limit, timeout }) => {
+  async ({ sql, limit, timeout, allowedTables }) => {
     if (!db) throw new Error("Database not opened");
 
-    // VERY basic safety check
-    if (!sql.trim().toLowerCase().startsWith("select")) {
-      throw new Error("Only SELECT queries allowed in this tool");
-    }
+    // Enhanced safety validation
+    validateQuery(sql, allowedTables);
 
     // Enforce max limit of 10000 rows to prevent memory issues
     const effectiveLimit = Math.min(limit, 10000);

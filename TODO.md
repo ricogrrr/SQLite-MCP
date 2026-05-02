@@ -11,7 +11,7 @@
 
 - [x] **Query timeout** — Kill long-running queries
 - [x] **Row limit** — Cap run_query results (e.g., 1000 rows max)
-- [ ] **Transaction support** — Begin/commit/rollback for write operations
+- [x] **Transaction support** — Begin/commit/rollback for write operations
 - [ ] **Better validation** — Whitelist tables, block dangerous keywords
 
 ## ⚡ Power Features
@@ -33,7 +33,7 @@
 2. [x] Row limits — Prevent accidental SELECT * on massive tables
 3. [x] Tests — Catch MCP protocol changes early
 4. [x] Query timeout — Kill long-running queries
-5. [ ] Transaction support — Begin/commit/rollback for write operations
+5. [x] Transaction support — Begin/commit/rollback for write operations
 6. [ ] Better validation — Whitelist tables, block dangerous keywords
 7. [ ] execute_write — Safe INSERT/UPDATE/DELETE with confirmation
 8. [ ] get_schema — Full DDL export of the database
