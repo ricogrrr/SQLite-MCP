@@ -58,7 +58,7 @@ describe('SQLite Database Operations', () => {
     });
 
     test('should respect row limits', () => {
-      const result = db.prepare('SELECT * FROM test_table').limit(2).all();
+      const result = db.prepare('SELECT * FROM test_table LIMIT 2').all();
       
       expect(result).toHaveLength(2);
     });

@@ -25,8 +25,8 @@ Add to your MCP config (`~/.codeium/windsurf/mcp_config.json`):
 {
   "mcpServers": {
     "sqlite": {
-      "command": "npx",
-      "args": ["ts-node", "--esm", "src/server.ts"],
+      "command": "node",
+      "args": ["/path/to/sqlite-mcp/dist/server.js"],
       "cwd": "/path/to/sqlite-mcp"
     }
   }
@@ -38,8 +38,14 @@ Then ask your AI assistant:
 
 ### Option 2: Run Standalone
 
+First build the project:
 ```bash
-npx ts-node --esm src/server.ts
+npm run build
+```
+
+Then start the server:
+```bash
+npm start
 ```
 
 The server communicates via stdio using the MCP protocol.
@@ -87,6 +93,9 @@ Once connected, you can ask:
 ```bash
 # Install dependencies
 npm install
+
+# Build the project
+npm run build
 
 # Run in development mode
 npx ts-node --esm src/server.ts
