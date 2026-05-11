@@ -65,12 +65,12 @@ server.tool(
     const foreignKeys = db.prepare(`PRAGMA foreign_key_list(${table})`).all();
     
     // Get indexes
-    const indexes = db.prepare(`PRAGMA index_list(${table})`).all();
+    const indexes = db.prepare(`PRAGMA index_list(${table})`).all() as any[];
     
     // Get index details for each index
     const indexDetails: any[] = [];
     for (const idx of indexes) {
-      const info = db.prepare(`PRAGMA index_info(${idx.name})`).all();
+      const info = db.prepare(`PRAGMA index_info(${idx.name})`).all() as any[];
       indexDetails.push({
         name: idx.name,
         unique: idx.unique,
@@ -128,7 +128,7 @@ function validateQuery(sql: string, allowedTables?: string[]): void {
     const joinMatch = normalizedSql.match(/\bjoin\s+(\w+)/gi);
     
     const tablesUsed: string[] = [];
-    if (fromMatch) tablesUsed.push(fromMatch[1].toLowerCase());
+    if (fromMatch && fromMatch[1]) tablesUsed.push(fromMatch[1].toLowerCase());
     if (joinMatch) {
       joinMatch.forEach(match => {
         const table = match.replace(/join\s+/i, '').toLowerCase();
@@ -168,10 +168,16 @@ server.tool(
     // Execute query with timeout protection using race
     const queryPromise = new Promise((resolve, reject) => {
       try {
-        const stmt = db!.prepare(sql);
+        if (!db) throw new Error("Database not opened");
+        // better-sqlite3 doesn't have .limit() on statement, so we just run the query
+        // The user is expected to put LIMIT in their SQL if they want it.
+        const stmt = db.prepare(sql);
         stmt.raw(true);
-        const rows = stmt.limit(effectiveLimit).all();
-        resolve(rows);
+        const rows = stmt.all();
+        // Manually enforce the limit since better-sqlite3 doesn't have a limit method
+        // and we want to ensure safety even if the user didn't specify a LIMIT in SQL
+        const limitedRows = rows.slice(0, effectiveLimit);
+        resolve(limitedRows);
       } catch (err) {
         reject(err);
       }
@@ -409,7 +415,12 @@ server.tool(
     }
 
     // Convert to CSV
-    const headers = Object.keys(result[0]);
+    if (result.length === 0) {
+      return {
+        content: [{ type: "text", text: "No data to export" }],
+      };
+    }
+    const headers = Object.keys(result[0] as object);
     const csvRows: string[] = [];
     
     // Header row
